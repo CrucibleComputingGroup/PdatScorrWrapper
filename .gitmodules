@@ -1,0 +1,9 @@
+[submodule "PdatDsl"]
+	path = PdatDsl
+	url = https://github.com/CrucibleComputingGroup/PdatRiscvDsl.git
+[submodule "ScorrPdat"]
+	path = ScorrPdat
+	url = https://github.com/CrucibleComputingGroup/PdatScorr.git
+[submodule "CoreSim"]
+	path = CoreSim
+	url = https://github.com/CrucibleComputingGroup/PdatCoreSim.git
