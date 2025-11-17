@@ -1,9 +1,12 @@
 [submodule "PdatDsl"]
 	path = PdatDsl
 	url = https://github.com/CrucibleComputingGroup/PdatRiscvDsl.git
+	branch = aesip
 [submodule "ScorrPdat"]
 	path = ScorrPdat
 	url = https://github.com/CrucibleComputingGroup/PdatScorr.git
+	branch = feat/aesip
 [submodule "CoreSim"]
 	path = CoreSim
 	url = https://github.com/CrucibleComputingGroup/PdatCoreSim.git
+	branch = main
