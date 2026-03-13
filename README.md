@@ -12,8 +12,9 @@ This repository integrates three components of the PDAT (Processor Design and Te
 
 Together, these tools enable:
 - Specification of processor ISA constraints
-- Automated synthesis optimization
+- Automated synthesis optimization targeting silicon (SKY130) or printed electronics (PPDK/EGFET)
 - Simulation-based signal correspondence analysis
+- Static timing analysis via OpenSTA
 - Formal verification of RTL designs
 
 ## Prerequisites
@@ -28,7 +29,24 @@ Together, these tools enable:
 
 ### Optional Tools
 - **Z3** - SMT solver (for advanced verification)
-- **SKY130 PDK** - For gate-level synthesis
+- **OpenSTA** - Static timing analysis
+- **SKY130 PDK** - For gate-level synthesis (silicon)
+- **EGFET PDK (PPDK)** - For gate-level synthesis (printed electronics). See [PrintedComputing/EGFET_PDK](https://github.com/PrintedComputing/EGFET_PDK)
+
+## Supported PDKs
+
+### SKY130 (Silicon)
+SkyWater 130nm process. Used as the default PDK for gate-level synthesis via `synth_to_gates.sh`.
+
+### PPDK / EGFET (Printed Electronics)
+Electrolyte-gated FET technology for inkjet-printed circuits. Uses a custom genlib-based ABC flow with post-processing to match PPDK liberty pin names (A1/A2 vs A/B for 2-input gates). Synthesis uses `synth_to_gates_ppdk.sh` and timing analysis uses `analyze_timing_ppdk.sh`.
+
+Key differences from SKY130:
+- 11 standard cells (INVX1, NAND2X1, NOR2X1, AND2X1, OR2X1, XOR2X1, XNOR2X1, DFFNRX1, DFFX1, LATCHX1, TSBUF)
+- No buffer gate; BUF is synthesized as two back-to-back INVX1 cells
+- DFF mapping uses `dfflegalize -cell $_DFF_PN0_ 0` (DFFNRX1 with tied-off reset)
+- Cell areas are ~100,000x larger than SKY130 (printed electronics feature sizes are several micrometers)
+- Operating frequencies in the Hz range (vs. MHz for SKY130)
 
 ## Installation
 
@@ -114,6 +132,8 @@ ScorrPdat provides batch processing for multiple DSL files:
 ```bash
 cd ScorrPdat
 ./batch_synth.sh [options]
+# Or use the Python batch script:
+python batch_synth.py [options]
 ```
 
 This will process multiple DSL specifications and generate optimized RTL for each.
@@ -147,7 +167,14 @@ Generate optimized RTL with instruction constraints applied:
 
 ```bash
 cd ScorrPdat
+# Full synthesis flow
 ./synth_ibex_with_constraints.sh ../PdatDsl/examples/example_spec.dsl --gates
+
+# Simplified synthesis (gate-level only, no formal verification)
+./synth_core_simplified.sh ../PdatDsl/examples/example_spec.dsl
+
+# Simplified synthesis targeting PPDK (printed electronics)
+./synth_core_simplified_ppdk.sh ../PdatDsl/examples/example_spec.dsl
 ```
 
 **Options:**
@@ -203,10 +230,19 @@ PdatScorrWrapper/
 │   ├── examples/           # Example DSL files
 │   └── README.md
 ├── ScorrPdat/              # RTL synthesis and optimization
-│   ├── scripts/            # Analysis tools
+│   ├── scripts/            # Gate synthesis & timing analysis
+│   │   ├── synth_to_gates.sh        # SKY130 gate mapping
+│   │   ├── synth_to_gates_ppdk.sh   # PPDK gate mapping
+│   │   ├── analyze_timing.sh        # SKY130 STA (OpenSTA)
+│   │   └── analyze_timing_ppdk.sh   # PPDK STA (OpenSTA)
+│   ├── odc/               # ODC (Observability-Don't-Care) analysis
 │   ├── rtl_scorr/          # SMT-based verification
-│   ├── synth_ibex_with_constraints.sh
+│   ├── configs/            # Synthesis configurations
+│   ├── synth_ibex_with_constraints.sh  # Full synthesis flow
+│   ├── synth_core_simplified.sh        # Simplified (SKY130)
+│   ├── synth_core_simplified_ppdk.sh   # Simplified (PPDK)
 │   ├── batch_synth.sh
+│   ├── batch_synth.py
 │   └── README.md
 └── CoreSim/                # Simulation framework
     ├── cores/              # Processor submodules (Ibex, etc.)
@@ -282,6 +318,9 @@ which vcs
 ### Missing Synlig/ABC (ScorrPdat)
 Install Synlig and ABC according to their respective documentation.
 
+### OpenSTA Not Found
+OpenSTA is required for static timing analysis. Install from [OpenSTA GitHub](https://github.com/The-OpenROAD-Project/OpenSTA) and ensure `sta` is in your PATH.
+
 ## License
 
 This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0).
@@ -295,6 +334,7 @@ See individual submodule LICENSE files for details.
 
 - **RtlScorr** - Yosys plugin for formal signal correspondence verification
 - **Ibex Core** - lowRISC's 2-stage/3-stage RV32IMC processor
+- **EGFET PDK** - [PrintedComputing/EGFET_PDK](https://github.com/PrintedComputing/EGFET_PDK) - Standard cell library for printed electronics
 
 ## Contributing
 
@@ -310,3 +350,4 @@ For questions or commercial licensing:
 - [RISC-V ISA Specification](https://riscv.org/technical/specifications/)
 - [Yosys Open SYnthesis Suite](https://yosyshq.net/yosys/)
 - [lowRISC Ibex Core](https://github.com/lowRISC/ibex)
+- [Printed Microprocessors (ISCA 2020)](https://ieeexplore.ieee.org/document/9138931/)
